@@ -10,12 +10,23 @@ from PIL import Image, ImageFilter, ImageOps
 SAVE_DIR = Path("preprocessed_output")
 SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
+# 단계 폴더
+STAGE_DIRS = {
+    "orig": SAVE_DIR / "1_original",
+    "resized": SAVE_DIR / "2_resized",
+    "gray": SAVE_DIR / "3_grayscale",
+    "blur": SAVE_DIR / "4_blurred",
+    "aug": SAVE_DIR / "5_augmented",
+}
+for p in STAGE_DIRS.values():
+    p.mkdir(parents=True, exist_ok=True)
+
+
 # THRESHOLD
 TARGET_SIZE: Tuple[int, int] = (224, 224)
 GAUSSIAN_BLUR_RADIUS: float = 0.2       # 가우시안 블러 값
 DARK_MEAN_THRESHOLD: float = 40.0       # 0~255 평균 밝기 임계값
 MIN_AREA_RATIO: float = 0.005
-
 MAX_TO_SAVE: int = 5                    # 저장할 샘플 수
 
 
@@ -32,7 +43,6 @@ def blur(img: Image.Image, radius: float = GAUSSIAN_BLUR_RADIUS) -> Image.Image:
 def hflip(img: Image.Image) -> Image.Image:
     return ImageOps.mirror(img)
 
-
 # 이상치 
 def is_too_dark(img_gray_u8: Image.Image, mean_thr: float = DARK_MEAN_THRESHOLD) -> bool:
     return np.array(img_gray_u8).mean() < mean_thr
@@ -41,12 +51,8 @@ def is_too_small_proxy(img_gray_u8: Image.Image,
                         min_area_ratio: float = MIN_AREA_RATIO) -> bool:
     # 가장 큰 객체의 면적 / 전체 이미지 면적 < min_area_ratio 이면 '너무 작다'로 판정
     arr = np.array(img_gray_u8, dtype=np.uint8)
-
-    # 엣지 검출
-    edges = cv2.Canny(arr, 50, 150)
-
-    # 면적 추출
-    cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    edges = cv2.Canny(arr, 50, 150)                                                 # 엣지 검출
+    cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)   # 면적 추출
     if not cnts:
         return True  # 윤곽이 전혀 없으면 '너무 작다/비어있다'로 처리
 
@@ -76,14 +82,20 @@ def process_and_save():
         sample = ds[i]
         orig_pil: Image.Image = sample["image"]
         label: int = sample["label"]
+        fname = f"idx{i}_label{label}.jpg"
 
-        # 1) Resize
+        # 1) Original (원본은 그대로 저장)
+        save_image(orig_pil.convert("RGB"), STAGE_DIRS["orig"] / fname)
+        
+        # 2) Resize
         resized_rgb = resize_to_target(orig_pil, TARGET_SIZE)
+        save_image(resized_rgb, STAGE_DIRS["resized"] / fname)
 
-        # 2) Grayscale
+        # 3) Grayscale
         gray = to_grayscale(resized_rgb)
+        save_image(gray, STAGE_DIRS["gray"] / fname)
 
-        # 3) 이상치 필터 
+        # * 이상치 필터 
         if is_too_dark(gray):
             continue
         if is_too_small_proxy(gray):
@@ -91,20 +103,17 @@ def process_and_save():
 
         # 4) Denoise(Blur)
         denoised = blur(gray)
+        save_image(denoised, STAGE_DIRS["blur"] / fname)
 
         # 5) Augment(Horizontal Flip)
-        processed = hflip(denoised)
-
-        # 저장
-        out_orig = SAVE_DIR / f"original_idx{i}_label{label}.jpg"
-        out_proc = SAVE_DIR / f"processed_idx{i}_label{label}.jpg"
-
-        save_image(orig_pil, out_orig)     # 시각화용 RGB
-        save_image(processed,   out_proc)     # 시각화용 Gray (Blur+Flip)
-
+        augmented = hflip(denoised)
+        save_image(augmented, STAGE_DIRS["aug"] / fname)
+        
         saved += 1
         if saved >= MAX_TO_SAVE:
             break
+
+        
 
     print(f"[Done] Saved {saved} image pairs → {SAVE_DIR.resolve()}")
 
