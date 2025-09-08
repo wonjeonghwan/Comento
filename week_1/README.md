@@ -13,6 +13,6 @@ Advanced : 심화 업무
 ## Advanced
 
 1. **image_preprocessing.py**  
-   - 기본 실행 프로그램.
+   - 기본 실행 프로그램(커맨드 라인 포함).
    - Food - 101에서 무작위 이미지 5개를 가져와 사이즈 조정, Grayscale, 노이즈 감소(Denoise), 좌우 반전을 실행
    - 실행 시 이미지 처리 과정이 Preprocessed_output 폴더 내 각 과정별로 저장  
