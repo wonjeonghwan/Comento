@@ -2,7 +2,7 @@
 from ultralytics import YOLO
 
 def stage1():
-    model = YOLO("yolov8n.pt")
+    model = YOLO("week_3/yolov8n.pt")
     model.train(
         data="week_3/archive/data.yaml",
         epochs=8,
@@ -16,7 +16,7 @@ def stage1():
     )
 
 def stage2():  # 증강 OFF로 미세조정(원본 적합)
-    model = YOLO("runs/detect/train/weights/last.pt")  # stage1 결과 사용
+    model = YOLO("week_3/runs/detect/train/weights/last.pt")  # stage1 결과 사용
     model.train(
         data="week_3/archive/data.yaml",
         epochs=8,                # 총 epoch(추가 10 정도면 충분)
