@@ -6,8 +6,8 @@ from bing_image_downloader import downloader
 
 
 downloader.download(
-    "피카츄",
-    limit=100,
+    "파이리",
+    limit=10,
     output_dir = r"week_4\data",
     adult_filter_off=True,
     force_replace=True,

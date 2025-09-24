@@ -16,3 +16,10 @@
    데이터 증강을 통해 성능 향상
    - Yolo_train_Aug.py : dataset 을 증강시켜 학습시킨 후, 원본을 추가로 학습진행
    - TP가 5~10% 가량 개선됨을 확인
+
+### Week_04 : Anomaly detection(ConvAE)
+   - dataset/train/Normal폴더 내 피카츄 이미지들을 학습시킨 후<br>
+   test 폴더 내 이미지들을 통해 이상탐지 여부를 확인한다
+   - train.py : dataset/train/Normal 폴더 내 이미지 학습
+   - test.py : test 폴더 내 이미지들의 이상여부 판단
+   - autoencoder.pth : train.py에서 학습한 모델
